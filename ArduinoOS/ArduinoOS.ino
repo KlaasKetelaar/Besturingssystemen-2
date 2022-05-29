@@ -43,6 +43,8 @@ void setup()
 {
 
   Serial.begin(9600);
+  Serial.println("Welcome to Arduino OS");
+  Serial.println("Please type your command");
 }
 
 void loop()
@@ -54,42 +56,46 @@ void loop()
 void processCommand(){
     commandType commandType;
     char c;
+    bool commandFound = false;
     while (Serial.available()) 
     {
       c = Serial.read();
       if (c == ' ' || c == '\r' || c =='\n') {
         Serial.println(commandType.name);
-        // Serial.println("1111");
         for (int indexStruct = 0; indexStruct < structSize; indexStruct++){
           int commandResult = strcmp(command[indexStruct].name,commandType.name);   
-          // Serial.println("2222");
-          // Serial.println(commandResult);    
           if (commandResult == 0){
-            command[indexStruct].func();       
+            command[indexStruct].func();    
+            commandFound = true;   
+          }
+        }
+        if (commandFound == false){
+          memset(commandType.name, NULL, commandLength);
+          Serial.println("No command found please try again");
+          Serial.println("please choose one of these commands:");
+          for(int i = 0; i < structSize; i++){
+            Serial.println(i);
+            Serial.println(command[i].name);
           }
         }
         commandLength = 0;
         memset(commandType.name, NULL, BUFSIZE); //reset the array
-        // Serial.println(commandType.name);
-        // Serial.println("3333");
         // token complete
        }
-      else{  
-        // Serial.println(commandLength);
-        if (commandLength > BUFSIZE){
-          Serial.println("command too long try again");
-          commandLength = 0;
-          memset(commandType.name, NULL, BUFSIZE); //reset the array           
+      else{
+        if(commandLength <= 12){
+          Serial.println(commandType.name);
+          commandType.name[commandLength] = tolower(c);
+          commandLength++; 
+        }  
+        else{
+          Serial.println("command too long please try again");
           processCommand();
         }
-        else{
-        commandType.name[commandLength] = tolower(c);
-        commandLength++; 
-        }
-      }// append c to buffer
+
+      }
     }
 }
-
 void store(){
   Serial.println("store function called");
 }
