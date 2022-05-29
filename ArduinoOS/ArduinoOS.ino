@@ -78,6 +78,7 @@ void processCommand(){
             Serial.println(command[i].name);
           }
         }
+        
         commandLength = 0;
         memset(commandType.name, NULL, BUFSIZE); //reset the array
         // token complete
