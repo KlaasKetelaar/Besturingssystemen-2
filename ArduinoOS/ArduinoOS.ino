@@ -61,48 +61,49 @@ void processCommand(){
     {
       c = Serial.read();
       if (c == ' ' || c == '\r' || c =='\n') {
-        Serial.println(commandType.name);
+        // validate command name
+        commandType.name[commandLength] = '\0'; // terminate string
+        if (strlen(commandType.name) == 0) {
+          Serial.println("No command entered, please try again");
+          return;
+        }
+        for (int i = 0; i < strlen(commandType.name); i++) {
+          if (!isalpha(commandType.name[i]) && !isspace(commandType.name[i])) {
+            Serial.println("Invalid character in command, please try again");
+            return;
+          }
+        }
+        // search for command
         for (int indexStruct = 0; indexStruct < structSize; indexStruct++){
           int commandResult = strcmp(command[indexStruct].name,commandType.name);  
-          Serial.println(commandResult); 
           if (commandResult == 0){
             command[indexStruct].func();    
             commandFound = true;   
           }
         }
-          if(commandFound == false){
-            Serial.println("No command found please try again");
-            commandLength = 0;
-            memset(commandType.name, NULL, BUFSIZE); //reset the array          
-          }
-        // if (commandFound == false){
-        //   memset(commandType.name, NULL, commandLength);
-        //   Serial.println("No command found please try again");
-        //   Serial.println("please choose one of these commands:");
-        //   for(int i = 0; i < structSize; i++){
-        //     Serial.println(i);
-        //     Serial.println(command[i].name);
-        //   }
-        // }
-        
+        if(!commandFound){
+          Serial.println("No command found, please try again");
+        }
+        // reset command length and buffer
         commandLength = 0;
-        memset(commandType.name, NULL, BUFSIZE); //reset the array
-        // token complete
-       }
+        memset(commandType.name, 0, BUFSIZE); 
+      }
       else{
-      //   if(commandLength <= 12){
-          Serial.println(commandType.name);
+        // add character to buffer
+        if (commandLength < BUFSIZE - 1){
           commandType.name[commandLength] = tolower(c);
           commandLength++; 
         }  
-      //   else{
-      //     Serial.println("command too long please try again");
-      //     processCommand();
-      //   }
-
-      // }
+        else{
+          Serial.println("Command too long, please try again");
+          // reset command length and buffer
+          commandLength = 0;
+          memset(commandType.name, 0, BUFSIZE); 
+        }
+      }
     }
 }
+
 void store(){
   Serial.println("store function called");
 }
