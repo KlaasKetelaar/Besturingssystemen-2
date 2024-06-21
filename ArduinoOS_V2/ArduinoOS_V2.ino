@@ -112,10 +112,15 @@ void listProcesses();
 int findProcessIndex(int processId);
 void runProcesses();
 void executeInstruction(int processIndex);
+
+void LoadForkProgram();
 void loadExampleProgram();
 void loadIfElseProgram();
 void loadLoopProgram();
 void loadWhileProgram();
+void loadVariableManagementProgram();
+
+
 void printEEPROMContents(int start, int length); // Nieuwe functie voor debugging
 void printStack(); // Functie voor stack debugging
 
@@ -175,10 +180,11 @@ Command commands[] = {
 void setup() {
     Serial.begin(9600);
     prompt();
-    
+    LoadForkProgram();
+    loadVariableManagementProgram();
     loadExampleProgram(); // Laad het voorbeeldprogramma in het EEPROM en de FAT
     // loadIfElseProgram();  // Laad het IF-ELSE programma
-    loadLoopProgram();    // Laad het LOOP programma
+    // loadLoopProgram();    // Laad het LOOP programma
     // loadWhileProgram();   // Laad het WHILE programma
     
     // startProcess("example"); // Start het voorbeeldproces
@@ -1102,4 +1108,63 @@ void loadWhileProgram() {
     }
 
     printEEPROMContents(whileFile.start, whileFile.length);
+}
+
+void LoadForkProgram(){
+  byte program[] = {
+        FORK, 'fileman',    // Start het 'fileman' proces
+        WAITUNTILDONE, 1,   // Wacht totdat proces 1 voltooid is
+
+        FORK, 'example',     // Start het 'varman' proces
+        WAITUNTILDONE, 2,   // Wacht totdat proces 2 voltooid is
+    };
+
+    FATEntry processManagementFile;
+    strcpy(processManagementFile.name, "fork");
+    processManagementFile.start = noOfFiles * sizeof(FATEntry) + EEPROM_SIZE / 2;
+    processManagementFile.length = sizeof(program);
+
+    writeFATEntry(noOfFiles, processManagementFile);
+    fat[noOfFiles++] = processManagementFile;
+
+    for (int i = 0; i < sizeof(program); i++) {
+        EEPROM.write(processManagementFile.start + i, program[i]);
+    }
+
+    printEEPROMContents(processManagementFile.start, processManagementFile.length);
+}
+
+void loadVariableManagementProgram() {
+    byte program[] = {
+        LOAD_CONST, 10,    // Laad 10 op de stack
+        STORE, 'a',        // Opslaan in variabele 'a'
+
+        LOAD_CONST, 20,    // Laad 20 op de stack
+        STORE, 'b',        // Opslaan in variabele 'b'
+
+        OPEN, 'datafile',  // Open bestand 'datafile'
+        WRITE, 'a',        // Schrijf variabele 'a' naar bestand
+        WRITE, 'b',        // Schrijf variabele 'b' naar bestand
+        CLOSE,             // Sluit bestand
+
+        READCHAR,          // Lees karakter uit bestand
+        PRINT,             // Print karakter
+
+        READINT,           // Lees integer uit bestand
+        PRINT,             // Print integer
+    };
+
+    FATEntry fileManagementFile;
+    strcpy(fileManagementFile.name, "fileman");
+    fileManagementFile.start = noOfFiles * sizeof(FATEntry) + EEPROM_SIZE / 2;
+    fileManagementFile.length = sizeof(program);
+
+    writeFATEntry(noOfFiles, fileManagementFile);
+    fat[noOfFiles++] = fileManagementFile;
+
+    for (int i = 0; i < sizeof(program); i++) {
+        EEPROM.write(fileManagementFile.start + i, program[i]);
+    }
+
+    printEEPROMContents(fileManagementFile.start, fileManagementFile.length);
 }
